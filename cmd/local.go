@@ -29,8 +29,8 @@ func chooseValueFromPromptItems(s string, l []string) string {
 	return v
 }
 
-var dockerCmd = &cobra.Command{
-	Use:   "docker",
+var localCmd = &cobra.Command{
+	Use:   "local",
 	Short: "A brief description of your command",
 	Long: `A longer description that spans multiple lines and likely contains examples
 and usage of using your command. For example:
@@ -104,5 +104,5 @@ to quickly create a Cobra application.`,
 }
 
 func init() {
-	rootCmd.AddCommand(dockerCmd)
+	rootCmd.AddCommand(localCmd)
 }
