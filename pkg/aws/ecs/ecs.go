@@ -70,7 +70,7 @@ func GetContainerAndRuntimeIDs(client *ecs.Client, ecs_cluster string, ecs_task_
 		Tasks:   []string{ecs_task_id},
 		Cluster: aws.String(ecs_cluster),
 	})
-	var container_and_runtimeids map[string]string
+	var container_and_runtimeids map[string]string = make(map[string]string)
 	for _, v := range describe_tasks.Tasks[0].Containers {
 		container_and_runtimeids[*v.Name] = strings.Split(*v.RuntimeId, "-")[0]
 	}
