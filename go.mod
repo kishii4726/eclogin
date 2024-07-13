@@ -1,4 +1,4 @@
-module smsh
+module eclogin
 
 go 1.22.1
 

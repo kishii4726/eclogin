@@ -1,7 +1,7 @@
 package main
 
 import (
-	"smsh/cmd"
+	"eclogin/cmd"
 )
 
 func main() {

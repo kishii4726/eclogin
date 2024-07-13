@@ -7,7 +7,7 @@ import (
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "smsh",
+	Use:   "eclogin",
 	Short: "Checks if the security group and WEF and ALB contain the specified IP address",
 	Long: `Checks if the security group and WAF and ALB contain the specified IP address.
 You can specify IP addresses as arguments or read a csv file.`,

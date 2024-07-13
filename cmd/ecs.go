@@ -3,10 +3,10 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
-	"smsh/pkg/aws/config"
-	"smsh/pkg/aws/ecs"
-	"smsh/pkg/aws/session"
-	"smsh/pkg/prompt"
+	"eclogin/pkg/aws/config"
+	"eclogin/pkg/aws/ecs"
+	"eclogin/pkg/aws/session"
+	"eclogin/pkg/prompt"
 
 	aws_ecs "github.com/aws/aws-sdk-go-v2/service/ecs"
 	"github.com/aws/aws-sdk-go-v2/service/ssm"
