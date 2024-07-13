@@ -31,13 +31,10 @@ func chooseValueFromPromptItems(s string, l []string) string {
 
 var localCmd = &cobra.Command{
 	Use:   "local",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Short: "Start local container login",
+	Long: `The "local" command allows you to interact with and execute commands inside local Docker containers.
+This command provides an interactive prompt to select a running or stopped container from your local Docker environment and choose a shell (such as /bin/sh or /bin/bash) to execute within the container.
+The tool then establishes an interactive terminal session, allowing you to run commands directly inside the selected container.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx := context.Background()
 		cli, err := client.NewEnvClient()
