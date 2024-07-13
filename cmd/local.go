@@ -7,13 +7,12 @@ import (
 	"os"
 	"strings"
 
-	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/manifoldco/promptui"
 	"github.com/spf13/cobra"
-	"golang.org/x/crypto/ssh/terminal"
+	"golang.org/x/term"
 )
 
 func chooseValueFromPromptItems(s string, l []string) string {
@@ -38,8 +37,9 @@ The tool then establishes an interactive terminal session, allowing you to run c
 `,
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx := context.Background()
-		cli, err := client.NewEnvClient()
 
+		// Create a new Docker client with environment variables
+		cli, err := client.NewClientWithOpts(client.FromEnv)
 		if err != nil {
 			panic(err)
 		}
@@ -64,7 +64,7 @@ The tool then establishes an interactive terminal session, allowing you to run c
 
 		selected_shell := chooseValueFromPromptItems("Select Shell", []string{"/bin/sh", "/bin/bash"})
 
-		execOpts := types.ExecConfig{
+		execOpts := container.ExecOptions{
 			AttachStdin:  true,
 			AttachStdout: true,
 			AttachStderr: true,
@@ -77,30 +77,28 @@ The tool then establishes an interactive terminal session, allowing you to run c
 			panic(err)
 		}
 
-		respTwo, err := cli.ContainerExecAttach(context.Background(), resp.ID, types.ExecStartCheck{})
+		execAttachResp, err := cli.ContainerExecAttach(context.Background(), resp.ID, container.ExecStartOptions{})
 		if err != nil {
 			panic(err)
 		}
 		defer func() {
-			if err := respTwo.Conn.Close(); err != nil {
+			if err := execAttachResp.Conn.Close(); err != nil {
 				log.Panic(err)
 			}
 			log.Println("connection closed")
 		}()
 
 		fd := int(os.Stdin.Fd())
-		if terminal.IsTerminal(fd) {
-			state, err := terminal.MakeRaw(fd)
+		if term.IsTerminal(fd) {
+			state, err := term.MakeRaw(fd)
 			if err != nil {
 				log.Panic(err)
 			}
-			defer terminal.Restore(fd, state)
-
+			defer term.Restore(fd, state)
 		}
 
-		go io.Copy(respTwo.Conn, os.Stdin)
-		stdcopy.StdCopy(os.Stdout, os.Stderr, respTwo.Reader)
-
+		go io.Copy(execAttachResp.Conn, os.Stdin)
+		stdcopy.StdCopy(os.Stdout, os.Stderr, execAttachResp.Reader)
 	},
 }
 
