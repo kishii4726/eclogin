@@ -31,10 +31,11 @@ func chooseValueFromPromptItems(s string, l []string) string {
 
 var localCmd = &cobra.Command{
 	Use:   "local",
-	Short: "Start local container login",
+	Short: "Execute commands inside local Docker containers.",
 	Long: `The "local" command allows you to interact with and execute commands inside local Docker containers.
 This command provides an interactive prompt to select a running or stopped container from your local Docker environment and choose a shell (such as /bin/sh or /bin/bash) to execute within the container.
-The tool then establishes an interactive terminal session, allowing you to run commands directly inside the selected container.`,
+The tool then establishes an interactive terminal session, allowing you to run commands directly inside the selected container.
+`,
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx := context.Background()
 		cli, err := client.NewEnvClient()
