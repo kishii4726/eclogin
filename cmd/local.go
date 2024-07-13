@@ -44,6 +44,9 @@ The tool then establishes an interactive terminal session, allowing you to run c
 			panic(err)
 		}
 
+		// Update the client with the server's API version
+		cli.NegotiateAPIVersion(ctx)
+
 		containers, err := cli.ContainerList(ctx, container.ListOptions{All: true})
 		if err != nil {
 			panic(err)
