@@ -1,12 +1,12 @@
 package cmd
 
 import (
-	"encoding/json"
-	"fmt"
 	"eclogin/pkg/aws/config"
 	"eclogin/pkg/aws/ecs"
 	"eclogin/pkg/aws/session"
 	"eclogin/pkg/prompt"
+	"encoding/json"
+	"fmt"
 
 	aws_ecs "github.com/aws/aws-sdk-go-v2/service/ecs"
 	"github.com/aws/aws-sdk-go-v2/service/ssm"
@@ -38,6 +38,16 @@ and establish a session to manage it remotely.`,
 
 		shell := prompt.GetUserSelectionFromList("Select Shell", []string{"sh", "bash"})
 
+		fmt.Printf(`If you are using awscli, please copy the following:
+aws ecs execute-command \
+	--cluster %s \
+	--task %s \
+	--container %s \
+	--interactive \
+	--command "%s"
+`,
+			cluster, task_id, container, shell)
+
 		out := ecs.GetExecuteCommandOutput(client, shell, task_id, cluster, container)
 		sessJson, _ := json.Marshal(out.Session)
 		target := fmt.Sprintf("ecs:%s_%s_%s", cluster, task_id, runtime_id)
@@ -45,7 +55,6 @@ and establish a session to manage it remotely.`,
 			Target: &target,
 		}
 		inputJson, _ := json.Marshal(input)
-
 		session.ExecCommand(sessJson, inputJson, region)
 	},
 }
