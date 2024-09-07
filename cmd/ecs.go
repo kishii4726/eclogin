@@ -44,9 +44,10 @@ aws ecs execute-command \
 	--task %s \
 	--container %s \
 	--interactive \
-	--command "%s"
+	--command %s \
+	--region %s
 `,
-			cluster, task_id, container, shell)
+			cluster, task_id, container, shell, region)
 
 		out := ecs.GetExecuteCommandOutput(client, shell, task_id, cluster, container)
 		sessJson, _ := json.Marshal(out.Session)
