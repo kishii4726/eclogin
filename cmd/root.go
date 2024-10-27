@@ -28,4 +28,5 @@ func init() {
 
 	ecsCmd.Flags().StringP("region", "r", "", "aws region name")
 	ecsCmd.Flags().StringP("profile", "p", "", "aws profile name")
+	ecsCmd.Flags().BoolP("investigate", "i", false, "check task stopped reason")
 }
