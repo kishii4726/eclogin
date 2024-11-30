@@ -28,7 +28,8 @@ func GetClusters(c *ecs.Client) []string {
 
 func GetServices(client *ecs.Client, ecs_cluster string) []string {
 	resp, err := client.ListServices(context.TODO(), &ecs.ListServicesInput{
-		Cluster: aws.String(ecs_cluster),
+		Cluster:    aws.String(ecs_cluster),
+		MaxResults: aws.Int32(100),
 	})
 	if err != nil {
 		log.Fatalf("ListServices failed %v\n", err)
