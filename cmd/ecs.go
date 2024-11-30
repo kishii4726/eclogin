@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"os"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	aws_ecs "github.com/aws/aws-sdk-go-v2/service/ecs"
@@ -60,6 +61,7 @@ and establish a session to manage it remotely.`,
 					fmt.Printf("Task Stopped Reason: %+v\n", *task.StoppedReason)
 				}
 			}
+			os.Exit(0)
 		}
 
 		task_id := prompt.GetUserSelectionFromList("Select ECS Task Id", ecs.GetTaskIds(client, cluster, service))
