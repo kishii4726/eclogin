@@ -29,7 +29,7 @@ and establish a session to manage it remotely.`,
 		cfg := config.LoadConfig(region, profile)
 		client := aws_ec2.NewFromConfig(cfg)
 
-		instance_id := prompt.GetFlagOrPrompt(cmd, "instance-id", "Select EC2 Instance", func() []string { return ec2.GetInstances(ec2.GetInstancesMap(client)) })
+		instance_id := prompt.GetFlagOrPrompt(cmd, "instance-id", "Select EC2 Instance", ec2.GetInstances(ec2.GetInstancesMap(client)))
 
 		fmt.Printf(`If you are using awscli, please copy the following:
 aws ssm start-session \

@@ -26,9 +26,9 @@ and establish a session to manage it remotely.`,
 		cfg := config.LoadConfig(region, profile)
 		client := aws_ecs.NewFromConfig(cfg)
 
-		cluster := prompt.GetFlagOrPrompt(cmd, "cluster", "Select ECS Cluster", func() []string { return ecs.GetCluster(client) })
-		service := prompt.GetFlagOrPrompt(cmd, "service", "Select ECS Service", func() []string { return ecs.GetService(client, cluster) })
-		task_id := prompt.GetFlagOrPrompt(cmd, "task-id", "Select ECS Task Id", func() []string { return ecs.GetTaskId(client, cluster, service) })
+		cluster := prompt.GetFlagOrPrompt(cmd, "cluster", "Select ECS Cluster", ecs.GetCluster(client))
+		service := prompt.GetFlagOrPrompt(cmd, "service", "Select ECS Service", ecs.GetService(client, cluster))
+		task_id := prompt.GetFlagOrPrompt(cmd, "task-id", "Select ECS Task Id", ecs.GetTaskId(client, cluster, service))
 
 		container_and_runtimeids := ecs.GetContainerAndRuntimeIDs(client, cluster, task_id)
 

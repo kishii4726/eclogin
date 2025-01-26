@@ -45,7 +45,7 @@ func GetFlag(cmd *cobra.Command, flag_name string, description_text string, defa
 	return flag_value
 }
 
-func GetFlagOrPrompt(cmd *cobra.Command, flag_name string, prompt_message string, get_list_func func() []string) string {
+func GetFlagOrPrompt(cmd *cobra.Command, flag_name string, prompt_message string, choices []string) string {
 	flag_value, err := cmd.Flags().GetString(flag_name)
 	if err != nil {
 		log.Fatalf("Get argument --%s failed %v\n", flag_name, err)
@@ -53,5 +53,5 @@ func GetFlagOrPrompt(cmd *cobra.Command, flag_name string, prompt_message string
 	if flag_value != "" {
 		return flag_value
 	}
-	return GetUserSelectionFromList(prompt_message, get_list_func())
+	return GetUserSelectionFromList(prompt_message, choices)
 }
