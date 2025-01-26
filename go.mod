@@ -11,7 +11,7 @@ require (
 	github.com/docker/docker v27.0.3+incompatible
 	github.com/manifoldco/promptui v0.9.0
 	github.com/spf13/cobra v1.8.1
-	golang.org/x/term v0.22.0
+	golang.org/x/term v0.28.0
 )
 
 require (
@@ -53,7 +53,7 @@ require (
 	go.opentelemetry.io/otel/metric v1.28.0 // indirect
 	go.opentelemetry.io/otel/sdk v1.28.0 // indirect
 	go.opentelemetry.io/otel/trace v1.28.0 // indirect
-	golang.org/x/sys v0.22.0 // indirect
+	golang.org/x/sys v0.29.0 // indirect
 	golang.org/x/time v0.5.0 // indirect
 	gotest.tools/v3 v3.5.1 // indirect
 )
