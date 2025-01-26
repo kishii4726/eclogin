@@ -47,7 +47,10 @@ The tool then establishes an interactive terminal session, allowing you to run c
 		// Update the client with the server's API version
 		cli.NegotiateAPIVersion(ctx)
 
-		containers, err := cli.ContainerList(ctx, container.ListOptions{All: true})
+		containers, err := cli.ContainerList(ctx, container.ListOptions{Filters: filters.NewArgs(filters.KeyValuePair{
+			Key:   "status",
+			Value: "running",
+		})})
 		if err != nil {
 			panic(err)
 		}
