@@ -9,7 +9,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/ecs"
 )
 
-func GetClusters(c *ecs.Client) []string {
+func GetCluster(c *ecs.Client) []string {
 	resp, err := c.ListClusters(context.TODO(), &ecs.ListClustersInput{})
 	if err != nil {
 		log.Fatalf("ListClusters failed %v\n", err)
@@ -26,7 +26,7 @@ func GetClusters(c *ecs.Client) []string {
 	return ecs_clusters
 }
 
-func GetServices(client *ecs.Client, ecs_cluster string) []string {
+func GetService(client *ecs.Client, ecs_cluster string) []string {
 	resp, err := client.ListServices(context.TODO(), &ecs.ListServicesInput{
 		Cluster:    aws.String(ecs_cluster),
 		MaxResults: aws.Int32(100),
@@ -46,7 +46,7 @@ func GetServices(client *ecs.Client, ecs_cluster string) []string {
 	return ecs_services
 }
 
-func GetTaskIds(client *ecs.Client, ecs_cluster string, ecs_service string) []string {
+func GetTaskId(client *ecs.Client, ecs_cluster string, ecs_service string) []string {
 	resp, err := client.ListTasks(context.TODO(), &ecs.ListTasksInput{
 		Cluster:     aws.String(ecs_cluster),
 		ServiceName: aws.String(ecs_service),

@@ -33,14 +33,25 @@ func GetUserSelectionFromList(l string, i []string) string {
 }
 
 func GetFlag(cmd *cobra.Command, flag_name string, description_text string, default_value string) string {
-	flag, err := cmd.Flags().GetString(flag_name)
+	flag_value, err := cmd.Flags().GetString(flag_name)
 	if err != nil {
 		log.Fatalf("%v", err)
 	}
 
-	if flag == "" {
-		flag = GetUserInputFrom(description_text, default_value)
+	if flag_value == "" {
+		flag_value = GetUserInputFrom(description_text, default_value)
 	}
 
-	return flag
+	return flag_value
+}
+
+func GetFlagOrPrompt(cmd *cobra.Command, flag_name string, prompt_message string, get_list_func func() []string) string {
+	flag_value, err := cmd.Flags().GetString(flag_name)
+	if err != nil {
+		log.Fatalf("Get argument --%s failed %v\n", flag_name, err)
+	}
+	if flag_value != "" {
+		return flag_value
+	}
+	return GetUserSelectionFromList(prompt_message, get_list_func())
 }

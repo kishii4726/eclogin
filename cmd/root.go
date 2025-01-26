@@ -28,4 +28,7 @@ func init() {
 
 	ecsCmd.Flags().StringP("region", "r", "", "aws region name")
 	ecsCmd.Flags().StringP("profile", "p", "", "aws profile name")
+	ecsCmd.Flags().StringP("cluster", "c", "", "ecs cluster name")
+	ecsCmd.Flags().StringP("service", "s", "", "ecs service name")
+	ecsCmd.Flags().StringP("task-id", "t", "", "ecs task id")
 }
