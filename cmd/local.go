@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/manifoldco/promptui"
@@ -61,6 +62,10 @@ The tool then establishes an interactive terminal session, allowing you to run c
 				containers_map[strings.TrimLeft(a, "/")+"("+container.Image+")"] = container.ID
 				containers_name_slice = append(containers_name_slice, strings.TrimLeft(a, "/")+"("+container.Image+")")
 			}
+		}
+
+		if len(containers_name_slice) == 0 {
+			log.Fatalf("No containers found")
 		}
 
 		selected_container := chooseValueFromPromptItems("Select Container", containers_name_slice)
