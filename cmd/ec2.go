@@ -2,12 +2,13 @@ package cmd
 
 import (
 	"context"
-	"encoding/json"
-	"log"
 	"eclogin/pkg/aws/config"
 	"eclogin/pkg/aws/ec2"
 	"eclogin/pkg/aws/session"
 	"eclogin/pkg/prompt"
+	"encoding/json"
+	"fmt"
+	"log"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	aws_ec2 "github.com/aws/aws-sdk-go-v2/service/ec2"
@@ -27,12 +28,15 @@ and establish a session to manage it remotely.`,
 
 		cfg := config.LoadConfig(region, profile)
 		client := aws_ec2.NewFromConfig(cfg)
-		instanceid_and_name_map := ec2.GetInstancesMap(client)
 
-		instances := ec2.GetInstances(instanceid_and_name_map)
-		selected_instance := prompt.GetUserSelectionFromList("Select EC Instance", instances)
+		instance_id := prompt.GetFlagOrPrompt(cmd, "instance-id", "Select EC2 Instance", func() []string { return ec2.GetInstances(ec2.GetInstancesMap(client)) })
 
-		instance_id := instanceid_and_name_map[selected_instance]
+		fmt.Printf(`If you are using awscli, please copy the following:
+aws ssm start-session \
+	--target %s \
+	--region %s
+`,
+			instance_id, region)
 
 		input := &ssm.StartSessionInput{Target: aws.String(instance_id)}
 

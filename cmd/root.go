@@ -25,6 +25,7 @@ func init() {
 
 	ec2Cmd.Flags().StringP("region", "r", "", "aws region name")
 	ec2Cmd.Flags().StringP("profile", "p", "", "aws profile name")
+	ec2Cmd.Flags().StringP("instance-id", "i", "", "ec2 instance id")
 
 	ecsCmd.Flags().StringP("region", "r", "", "aws region name")
 	ecsCmd.Flags().StringP("profile", "p", "", "aws profile name")
