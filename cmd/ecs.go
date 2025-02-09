@@ -7,10 +7,20 @@ import (
 	"eclogin/pkg/prompt"
 	"encoding/json"
 	"fmt"
+	"log"
 
 	aws_ecs "github.com/aws/aws-sdk-go-v2/service/ecs"
 	"github.com/aws/aws-sdk-go-v2/service/ssm"
 	"github.com/spf13/cobra"
+)
+
+const (
+	defaultRegion = "ap-northeast-1"
+	targetFormat  = "ecs:%s_%s_%s"
+)
+
+var (
+	availableShells = []string{"sh", "bash"}
 )
 
 var ecsCmd = &cobra.Command{
@@ -19,26 +29,82 @@ var ecsCmd = &cobra.Command{
 	Long: `The ecs command allows you to start an interactive session with an ECS container
 using ECS Exec. You can select a cluster, service, task, and container,
 and establish a session to manage it remotely.`,
-	Run: func(cmd *cobra.Command, args []string) {
-		region := prompt.GetFlag(cmd, "region", "Please enter aws region(Default: ap-northeast-1)", "ap-northeast-1")
-		profile := prompt.GetFlag(cmd, "profile", "Please enter aws profile(If empty, default settings are loaded)", "")
+	Run: runECSCommand,
+}
 
-		cfg := config.LoadConfig(region, profile)
-		client := aws_ecs.NewFromConfig(cfg)
+func runECSCommand(cmd *cobra.Command, _ []string) {
+	region := prompt.GetFlagOrInput(cmd, "region", "Please enter AWS region", defaultRegion)
+	profile := prompt.GetFlagOrInput(cmd, "profile", "Please enter AWS profile (optional)", "")
 
-		cluster := prompt.GetFlagOrPrompt(cmd, "cluster", "Select ECS Cluster", ecs.GetCluster(client))
-		service := prompt.GetFlagOrPrompt(cmd, "service", "Select ECS Service", ecs.GetService(client, cluster))
-		task_id := prompt.GetFlagOrPrompt(cmd, "task-id", "Select ECS Task Id", ecs.GetTaskId(client, cluster, service))
+	cfg, err := config.LoadConfig(region, profile)
+	if err != nil {
+		log.Fatalf("Failed to load AWS config: %v", err)
+	}
 
-		container_and_runtimeids := ecs.GetContainerAndRuntimeIDs(client, cluster, task_id)
+	ecsClient := aws_ecs.NewFromConfig(cfg)
 
-		containers := ecs.GetContainers(container_and_runtimeids)
-		container := prompt.GetUserSelectionFromList("Select ECS Container", containers)
-		runtime_id := container_and_runtimeids[container]
+	cluster, err := getECSCluster(cmd, ecsClient)
+	if err != nil {
+		log.Fatalf("Failed to get ECS cluster: %v", err)
+	}
 
-		shell := prompt.GetUserSelectionFromList("Select Shell", []string{"sh", "bash"})
+	service, err := getECSService(cmd, ecsClient, cluster)
+	if err != nil {
+		log.Fatalf("Failed to get ECS service: %v", err)
+	}
 
-		fmt.Printf(`If you are using awscli, please copy the following:
+	taskID, err := getECSTaskID(cmd, ecsClient, cluster, service)
+	if err != nil {
+		log.Fatalf("Failed to get ECS task ID: %v", err)
+	}
+
+	containerInfo, err := ecs.GetContainerInfo(ecsClient, cluster, taskID)
+	if err != nil {
+		log.Fatalf("Failed to get container information: %v", err)
+	}
+
+	container, runtimeID := selectContainer(containerInfo)
+	shell := prompt.PromptSelect("Select Shell", availableShells)
+
+	printAwsCliEcsCommand(cluster, taskID, container, shell, region)
+
+	if err := executeContainerSession(ecsClient, shell, taskID, cluster, container, runtimeID, region); err != nil {
+		log.Fatalf("Failed to execute container session: %v", err)
+	}
+}
+
+func getECSCluster(cmd *cobra.Command, client *aws_ecs.Client) (string, error) {
+	clusters, err := ecs.ListClusters(client)
+	if err != nil {
+		return "", err
+	}
+	return prompt.GetFlagOrSelect(cmd, "cluster", "Select ECS Cluster", clusters), nil
+}
+
+func getECSService(cmd *cobra.Command, client *aws_ecs.Client, cluster string) (string, error) {
+	services, err := ecs.ListServices(client, cluster)
+	if err != nil {
+		return "", err
+	}
+	return prompt.GetFlagOrSelect(cmd, "service", "Select ECS Service", services), nil
+}
+
+func getECSTaskID(cmd *cobra.Command, client *aws_ecs.Client, cluster, service string) (string, error) {
+	taskIDs, err := ecs.ListTaskIDs(client, cluster, service)
+	if err != nil {
+		return "", err
+	}
+	return prompt.GetFlagOrSelect(cmd, "task-id", "Select ECS Task ID", taskIDs), nil
+}
+
+func selectContainer(containerInfo map[string]string) (string, string) {
+	containers := ecs.ListContainerNames(containerInfo)
+	container := prompt.PromptSelect("Select ECS Container", containers)
+	return container, containerInfo[container]
+}
+
+func printAwsCliEcsCommand(cluster, taskID, container, shell, region string) {
+	fmt.Printf(`If you are using awscli, please copy the following:
 aws ecs execute-command \
 	--cluster %s \
 	--task %s \
@@ -47,17 +113,31 @@ aws ecs execute-command \
 	--command %s \
 	--region %s
 `,
-			cluster, task_id, container, shell, region)
+		cluster, taskID, container, shell, region)
+}
 
-		out := ecs.GetExecuteCommandOutput(client, shell, task_id, cluster, container)
-		sessJson, _ := json.Marshal(out.Session)
-		target := fmt.Sprintf("ecs:%s_%s_%s", cluster, task_id, runtime_id)
-		input := ssm.StartSessionInput{
-			Target: &target,
-		}
-		inputJson, _ := json.Marshal(input)
-		session.ExecCommand(sessJson, inputJson, region)
-	},
+func executeContainerSession(client *aws_ecs.Client, shell, taskID, cluster, container, runtimeID, region string) error {
+	out, err := ecs.ExecuteContainerCommand(client, shell, taskID, cluster, container)
+	if err != nil {
+		return fmt.Errorf("execute command failed: %w", err)
+	}
+
+	sessionJSON, err := json.Marshal(out.Session)
+	if err != nil {
+		return fmt.Errorf("marshal session failed: %w", err)
+	}
+
+	target := fmt.Sprintf(targetFormat, cluster, taskID, runtimeID)
+	input := ssm.StartSessionInput{
+		Target: &target,
+	}
+
+	inputJSON, err := json.Marshal(input)
+	if err != nil {
+		return fmt.Errorf("marshal input failed: %w", err)
+	}
+
+	return session.StartSession(sessionJSON, inputJSON, region)
 }
 
 func init() {

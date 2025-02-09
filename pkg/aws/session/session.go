@@ -6,20 +6,22 @@ import (
 	"os/signal"
 )
 
-func ExecCommand(sessJson []byte, inputJson []byte, region string) {
-	exec_cmd := exec.Command(
+func StartSession(sessionData []byte, inputData []byte, region string) error {
+	cmd := exec.Command(
 		"session-manager-plugin",
-		string(sessJson),
+		string(sessionData),
 		region,
 		"StartSession",
 		"",
-		string(inputJson),
+		string(inputData),
 		"https://ssm."+region+".amazonaws.com",
 	)
 	signal.Ignore(os.Interrupt)
 	defer signal.Reset(os.Interrupt)
-	exec_cmd.Stdout = os.Stdout
-	exec_cmd.Stdin = os.Stdin
-	exec_cmd.Stderr = os.Stderr
-	exec_cmd.Run()
+
+	cmd.Stdout = os.Stdout
+	cmd.Stdin = os.Stdin
+	cmd.Stderr = os.Stderr
+
+	return cmd.Run()
 }

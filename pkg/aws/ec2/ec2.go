@@ -7,44 +7,44 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
+	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
 )
 
-func GetInstancesMap(c *ec2.Client) map[string]string {
-	resp, err := c.DescribeInstances(context.TODO(), &ec2.DescribeInstancesInput{})
+func GetInstanceNameIDMap(client *ec2.Client) map[string]string {
+	instances, err := client.DescribeInstances(context.TODO(), &ec2.DescribeInstancesInput{})
 	if err != nil {
-		log.Fatalf("DescribeInstances failed %v\n", err)
+		log.Fatalf("Failed to describe EC2 instances: %v", err)
 	}
 
-	ec2_reservations := resp.Reservations
-	if len(ec2_reservations) == 0 {
-		log.Fatalf("EC2 Instance does not exist")
+	reservations := instances.Reservations
+	if len(reservations) == 0 {
+		log.Fatalf("No EC2 instances found")
 	}
 
-	instanceid_and_name_map := map[string]string{}
-	for _, r := range ec2_reservations {
-		var nameTag string
-		for _, ins := range r.Instances {
-			for _, tag := range ins.Tags {
-				if aws.ToString(tag.Key) == "Name" {
-					nameTag = aws.ToString(tag.Value)
-					break
-				}
-			}
-			if nameTag == "" {
-				nameTag = "No Name Tag"
-			}
-			instanceid_and_name_map[fmt.Sprintf("%s(%s)", nameTag, *ins.InstanceId)] = *ins.InstanceId
+	instanceMap := make(map[string]string)
+	for _, reservation := range reservations {
+		for _, instance := range reservation.Instances {
+			name := getInstanceName(instance.Tags)
+			displayName := fmt.Sprintf("%s(%s)", name, *instance.InstanceId)
+			instanceMap[displayName] = *instance.InstanceId
 		}
 	}
 
-	return instanceid_and_name_map
+	return instanceMap
+}
+func getInstanceName(tags []types.Tag) string {
+	for _, tag := range tags {
+		if aws.ToString(tag.Key) == "Name" {
+			return aws.ToString(tag.Value)
+		}
+	}
+	return "No Name Tag"
 }
 
-func GetInstances(m map[string]string) []string {
-	var instances []string
-	for k, _ := range m {
-		instances = append(instances, k)
+func GetInstanceDisplayNames(instanceMap map[string]string) []string {
+	displayNames := make([]string, 0, len(instanceMap))
+	for name := range instanceMap {
+		displayNames = append(displayNames, name)
 	}
-
-	return instances
+	return displayNames
 }
