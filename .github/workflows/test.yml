@@ -23,4 +23,4 @@ jobs:
       run: go mod tidy
 
     - name: run tests
-      run: go test ./... -v -tags=ci
+      run: go test ./... -v
