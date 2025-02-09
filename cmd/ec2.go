@@ -23,8 +23,9 @@ var ec2Cmd = &cobra.Command{
 using AWS Systems Manager. You can select an instance from the list of running instances
 and establish a session to manage it remotely.`,
 	Run: func(cmd *cobra.Command, _ []string) {
-		region := prompt.GetFlagOrInput(cmd, "region", "Please enter AWS region (default: ap-northeast-1)", "ap-northeast-1")
-		profile := prompt.GetFlagOrInput(cmd, "profile", "Please enter AWS profile (optional)", "")
+		prompter := prompt.NewUIPrompter()
+		region := prompt.GetFlagOrInput(cmd, "region", "Please enter AWS region (default: ap-northeast-1)", "ap-northeast-1", prompter)
+		profile := prompt.GetFlagOrInput(cmd, "profile", "Please enter AWS profile (optional)", "", prompter)
 
 		cfg, err := config.LoadConfig(region, profile)
 		if err != nil {
@@ -38,7 +39,7 @@ and establish a session to manage it remotely.`,
 			log.Fatalf("No EC2 instances found")
 		}
 
-		selectedInstance := prompt.GetFlagOrSelect(cmd, "instance-id", "Select EC2 Instance", displayNames)
+		selectedInstance := prompt.GetFlagOrSelect(cmd, "instance-id", "Select EC2 Instance", displayNames, prompter)
 		instanceID := instanceNameIDMap[selectedInstance]
 		printAwsCliEc2Command(instanceID, region)
 

@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"eclogin/pkg/aws/config"
 	"eclogin/pkg/aws/ecs"
 	"eclogin/pkg/aws/session"
@@ -13,6 +14,14 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/ssm"
 	"github.com/spf13/cobra"
 )
+
+type ECSClientInterface interface {
+	ListClusters(ctx context.Context, params *aws_ecs.ListClustersInput, optFns ...func(*aws_ecs.Options)) (*aws_ecs.ListClustersOutput, error)
+	ListServices(ctx context.Context, params *aws_ecs.ListServicesInput, optFns ...func(*aws_ecs.Options)) (*aws_ecs.ListServicesOutput, error)
+	ListTasks(ctx context.Context, params *aws_ecs.ListTasksInput, optFns ...func(*aws_ecs.Options)) (*aws_ecs.ListTasksOutput, error)
+	DescribeTasks(ctx context.Context, params *aws_ecs.DescribeTasksInput, optFns ...func(*aws_ecs.Options)) (*aws_ecs.DescribeTasksOutput, error)
+	ExecuteCommand(ctx context.Context, params *aws_ecs.ExecuteCommandInput, optFns ...func(*aws_ecs.Options)) (*aws_ecs.ExecuteCommandOutput, error)
+}
 
 const (
 	defaultRegion = "ap-northeast-1"
@@ -33,8 +42,9 @@ and establish a session to manage it remotely.`,
 }
 
 func runECSCommand(cmd *cobra.Command, _ []string) {
-	region := prompt.GetFlagOrInput(cmd, "region", "Please enter AWS region", defaultRegion)
-	profile := prompt.GetFlagOrInput(cmd, "profile", "Please enter AWS profile (optional)", "")
+	prompter := prompt.NewUIPrompter()
+	region := prompt.GetFlagOrInput(cmd, "region", "Please enter AWS region", defaultRegion, prompter)
+	profile := prompt.GetFlagOrInput(cmd, "profile", "Please enter AWS profile (optional)", "", prompter)
 
 	cfg, err := config.LoadConfig(region, profile)
 	if err != nil {
@@ -63,8 +73,8 @@ func runECSCommand(cmd *cobra.Command, _ []string) {
 		log.Fatalf("Failed to get container information: %v", err)
 	}
 
-	container, runtimeID := selectContainer(containerInfo)
-	shell := prompt.PromptSelect("Select Shell", availableShells)
+	container, runtimeID := selectContainer(cmd, containerInfo)
+	shell := prompt.GetFlagOrSelect(cmd, "shell", "Select Shell", availableShells, prompter)
 
 	printAwsCliEcsCommand(cluster, taskID, container, shell, region)
 
@@ -73,33 +83,33 @@ func runECSCommand(cmd *cobra.Command, _ []string) {
 	}
 }
 
-func getECSCluster(cmd *cobra.Command, client *aws_ecs.Client) (string, error) {
+func getECSCluster(cmd *cobra.Command, client ECSClientInterface) (string, error) {
 	clusters, err := ecs.ListClusters(client)
 	if err != nil {
 		return "", err
 	}
-	return prompt.GetFlagOrSelect(cmd, "cluster", "Select ECS Cluster", clusters), nil
+	return prompt.GetFlagOrSelect(cmd, "cluster", "Select ECS Cluster", clusters, prompt.NewUIPrompter()), nil
 }
 
-func getECSService(cmd *cobra.Command, client *aws_ecs.Client, cluster string) (string, error) {
+func getECSService(cmd *cobra.Command, client ECSClientInterface, cluster string) (string, error) {
 	services, err := ecs.ListServices(client, cluster)
 	if err != nil {
 		return "", err
 	}
-	return prompt.GetFlagOrSelect(cmd, "service", "Select ECS Service", services), nil
+	return prompt.GetFlagOrSelect(cmd, "service", "Select ECS Service", services, prompt.NewUIPrompter()), nil
 }
 
-func getECSTaskID(cmd *cobra.Command, client *aws_ecs.Client, cluster, service string) (string, error) {
+func getECSTaskID(cmd *cobra.Command, client ECSClientInterface, cluster, service string) (string, error) {
 	taskIDs, err := ecs.ListTaskIDs(client, cluster, service)
 	if err != nil {
 		return "", err
 	}
-	return prompt.GetFlagOrSelect(cmd, "task-id", "Select ECS Task ID", taskIDs), nil
+	return prompt.GetFlagOrSelect(cmd, "task-id", "Select ECS Task ID", taskIDs, prompt.NewUIPrompter()), nil
 }
 
-func selectContainer(containerInfo map[string]string) (string, string) {
+func selectContainer(cmd *cobra.Command, containerInfo map[string]string) (string, string) {
 	containers := ecs.ListContainerNames(containerInfo)
-	container := prompt.PromptSelect("Select ECS Container", containers)
+	container := prompt.GetFlagOrSelect(cmd, "container", "Select ECS Container", containers, prompt.NewUIPrompter())
 	return container, containerInfo[container]
 }
 
