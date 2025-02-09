@@ -23,7 +23,6 @@ func TestGetFlagOrInput(t *testing.T) {
 	cmd := &cobra.Command{}
 	cmd.Flags().String("test-flag", "", "test flag")
 
-	// フラグが設定されている場合
 	err := cmd.Flags().Set("test-flag", "flag-value")
 	if err != nil {
 		t.Fatal(err)
@@ -38,7 +37,6 @@ func TestGetFlagOrSelect(t *testing.T) {
 	cmd := &cobra.Command{}
 	cmd.Flags().String("test-flag", "", "test flag")
 
-	// フラグが設定されている場合
 	err := cmd.Flags().Set("test-flag", "option1")
 	if err != nil {
 		t.Fatal(err)
