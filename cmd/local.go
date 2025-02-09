@@ -2,11 +2,12 @@ package cmd
 
 import (
 	"context"
+	"fmt"
 	"io"
-	"log"
 	"os"
 	"strings"
 
+	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
@@ -16,17 +17,98 @@ import (
 	"golang.org/x/term"
 )
 
-func chooseValueFromPromptItems(s string, l []string) string {
-	prompt := promptui.Select{
-		Label: s,
-		Items: l,
-	}
-	_, v, err := prompt.Run()
+const (
+	defaultShellBash = "/bin/bash"
+	defaultShellSh   = "/bin/sh"
+)
+
+type dockerExecutor struct {
+	client *client.Client
+	ctx    context.Context
+}
+
+func newDockerExecutor(ctx context.Context) (*dockerExecutor, error) {
+	cli, err := client.NewClientWithOpts(client.FromEnv)
 	if err != nil {
-		log.Fatalf("Prompt failed %v\n", err)
+		return nil, err
+	}
+	cli.NegotiateAPIVersion(ctx)
+	return &dockerExecutor{client: cli, ctx: ctx}, nil
+}
+
+func (d *dockerExecutor) getRunningContainers() (map[string]string, []string, error) {
+	containerFilter := filters.NewArgs(filters.KeyValuePair{
+		Key:   "status",
+		Value: "running",
+	})
+
+	containers, err := d.client.ContainerList(d.ctx, container.ListOptions{Filters: containerFilter})
+	if err != nil {
+		return nil, nil, err
 	}
 
-	return v
+	containerMap := make(map[string]string)
+	var containerNames []string
+
+	for _, container := range containers {
+		for _, name := range container.Names {
+			displayName := formatContainerName(name, container.Image)
+			containerMap[displayName] = container.ID
+			containerNames = append(containerNames, displayName)
+		}
+	}
+
+	return containerMap, containerNames, nil
+}
+
+func formatContainerName(name, image string) string {
+	return strings.TrimLeft(name, "/") + "(" + image + ")"
+}
+
+func selectOption(prompt string, options []string) (string, error) {
+	selector := promptui.Select{
+		Label: prompt,
+		Items: options,
+	}
+	_, result, err := selector.Run()
+	return result, err
+}
+
+func (d *dockerExecutor) executeInContainer(containerID, shell string) error {
+	execConfig := container.ExecOptions{
+		AttachStdin:  true,
+		AttachStdout: true,
+		AttachStderr: true,
+		Tty:          true,
+		Cmd:          []string{shell},
+	}
+
+	execResp, err := d.client.ContainerExecCreate(d.ctx, containerID, execConfig)
+	if err != nil {
+		return err
+	}
+
+	execConn, err := d.client.ContainerExecAttach(d.ctx, execResp.ID, container.ExecStartOptions{})
+	if err != nil {
+		return err
+	}
+	defer execConn.Close()
+
+	return setupTerminal(execConn)
+}
+func setupTerminal(execConn types.HijackedResponse) error {
+	fd := int(os.Stdin.Fd())
+	if term.IsTerminal(fd) {
+		state, err := term.MakeRaw(fd)
+		if err != nil {
+			return err
+		}
+		defer term.Restore(fd, state)
+	}
+
+	go io.Copy(execConn.Conn, os.Stdin)
+	stdcopy.StdCopy(os.Stdout, os.Stderr, execConn.Reader)
+	return nil
 }
 
 var localCmd = &cobra.Command{
@@ -36,77 +118,34 @@ var localCmd = &cobra.Command{
 This command provides an interactive prompt to select a running or stopped container from your local Docker environment and choose a shell (such as /bin/sh or /bin/bash) to execute within the container.
 The tool then establishes an interactive terminal session, allowing you to run commands directly inside the selected container.
 `,
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(_ *cobra.Command, _ []string) error {
 		ctx := context.Background()
 
-		// Create a new Docker client with environment variables
-		cli, err := client.NewClientWithOpts(client.FromEnv)
+		executor, err := newDockerExecutor(ctx)
 		if err != nil {
-			panic(err)
+			return err
 		}
 
-		// Update the client with the server's API version
-		cli.NegotiateAPIVersion(ctx)
-
-		containers, err := cli.ContainerList(ctx, container.ListOptions{Filters: filters.NewArgs(filters.KeyValuePair{
-			Key:   "status",
-			Value: "running",
-		})})
+		containerMap, containerNames, err := executor.getRunningContainers()
 		if err != nil {
-			panic(err)
-		}
-		containers_map := map[string]string{}
-		var containers_name_slice []string
-		for _, container := range containers {
-			for _, a := range container.Names {
-				containers_map[strings.TrimLeft(a, "/")+"("+container.Image+")"] = container.ID
-				containers_name_slice = append(containers_name_slice, strings.TrimLeft(a, "/")+"("+container.Image+")")
-			}
+			return err
 		}
 
-		if len(containers_name_slice) == 0 {
-			log.Fatalf("No containers found")
+		if len(containerNames) == 0 {
+			return fmt.Errorf("no running containers found")
 		}
 
-		selected_container := chooseValueFromPromptItems("Select Container", containers_name_slice)
-
-		selected_shell := chooseValueFromPromptItems("Select Shell", []string{"/bin/sh", "/bin/bash"})
-
-		execOpts := container.ExecOptions{
-			AttachStdin:  true,
-			AttachStdout: true,
-			AttachStderr: true,
-			Tty:          true,
-			Cmd:          []string{selected_shell},
-		}
-
-		resp, err := cli.ContainerExecCreate(context.Background(), containers_map[selected_container], execOpts)
+		selectedContainer, err := selectOption("Select Container", containerNames)
 		if err != nil {
-			panic(err)
+			return err
 		}
 
-		execAttachResp, err := cli.ContainerExecAttach(context.Background(), resp.ID, container.ExecStartOptions{})
+		selectedShell, err := selectOption("Select Shell", []string{defaultShellSh, defaultShellBash})
 		if err != nil {
-			panic(err)
-		}
-		defer func() {
-			if err := execAttachResp.Conn.Close(); err != nil {
-				log.Panic(err)
-			}
-			log.Println("connection closed")
-		}()
-
-		fd := int(os.Stdin.Fd())
-		if term.IsTerminal(fd) {
-			state, err := term.MakeRaw(fd)
-			if err != nil {
-				log.Panic(err)
-			}
-			defer term.Restore(fd, state)
+			return err
 		}
 
-		go io.Copy(execAttachResp.Conn, os.Stdin)
-		stdcopy.StdCopy(os.Stdout, os.Stderr, execAttachResp.Reader)
+		return executor.executeInContainer(containerMap[selectedContainer], selectedShell)
 	},
 }
 

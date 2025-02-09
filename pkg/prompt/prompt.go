@@ -7,51 +7,49 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func GetUserInputFrom(l string, d string) string {
+func promptInput(label string, defaultValue string) string {
 	prompt := promptui.Prompt{
-		Label:   l,
-		Default: d,
+		Label:   label,
+		Default: defaultValue,
 	}
-	v, err := prompt.Run()
+	result, err := prompt.Run()
 	if err != nil {
-		log.Fatalf("Prompt failed %v\n", err)
+		log.Fatalf("Failed to get user input: %v\n", err)
 	}
-	return v
+	return result
 }
 
-func GetUserSelectionFromList(l string, i []string) string {
+func PromptSelect(label string, options []string) string {
 	prompt := promptui.Select{
-		Label: l,
-		Items: i,
+		Label: label,
+		Items: options,
 	}
-	_, v, err := prompt.Run()
+	_, result, err := prompt.Run()
 	if err != nil {
-		log.Fatalf("Prompt failed %v\n", err)
+		log.Fatalf("Failed to get user selection: %v\n", err)
 	}
-
-	return v
+	return result
 }
 
-func GetFlag(cmd *cobra.Command, flag_name string, description_text string, default_value string) string {
-	flag_value, err := cmd.Flags().GetString(flag_name)
+func GetFlagOrInput(cmd *cobra.Command, flagName string, promptMsg string, defaultValue string) string {
+	flagValue, err := cmd.Flags().GetString(flagName)
 	if err != nil {
-		log.Fatalf("%v", err)
+		log.Fatalf("Failed to get flag '%s': %v", flagName, err)
 	}
 
-	if flag_value == "" {
-		flag_value = GetUserInputFrom(description_text, default_value)
+	if flagValue == "" {
+		flagValue = promptInput(promptMsg, defaultValue)
 	}
-
-	return flag_value
+	return flagValue
 }
 
-func GetFlagOrPrompt(cmd *cobra.Command, flag_name string, prompt_message string, choices []string) string {
-	flag_value, err := cmd.Flags().GetString(flag_name)
+func GetFlagOrSelect(cmd *cobra.Command, flagName string, promptMsg string, options []string) string {
+	flagValue, err := cmd.Flags().GetString(flagName)
 	if err != nil {
-		log.Fatalf("Get argument --%s failed %v\n", flag_name, err)
+		log.Fatalf("Failed to get flag '%s': %v", flagName, err)
 	}
-	if flag_value != "" {
-		return flag_value
+	if flagValue != "" {
+		return flagValue
 	}
-	return GetUserSelectionFromList(prompt_message, choices)
+	return PromptSelect(promptMsg, options)
 }

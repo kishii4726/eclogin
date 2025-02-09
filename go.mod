@@ -9,8 +9,10 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/ecs v1.44.3
 	github.com/aws/aws-sdk-go-v2/service/ssm v1.56.8
 	github.com/docker/docker v27.5.1+incompatible
+	github.com/golang/mock v1.6.0
 	github.com/manifoldco/promptui v0.9.0
 	github.com/spf13/cobra v1.8.1
+	github.com/stretchr/testify v1.10.0
 	golang.org/x/term v0.28.0
 )
 
@@ -55,5 +57,6 @@ require (
 	go.opentelemetry.io/otel/trace v1.28.0 // indirect
 	golang.org/x/sys v0.29.0 // indirect
 	golang.org/x/time v0.5.0 // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 	gotest.tools/v3 v3.5.1 // indirect
 )

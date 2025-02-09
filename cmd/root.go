@@ -6,12 +6,16 @@ import (
 	"github.com/spf13/cobra"
 )
 
+const (
+	appVersion = "0.0.16"
+	appName    = "eclogin"
+)
+
 var rootCmd = &cobra.Command{
-	Use:     "eclogin",
-	Version: "0.0.16",
-	Short:   "Checks if the security group and WEF and ALB contain the specified IP address",
-	Long: `Checks if the security group and WAF and ALB contain the specified IP address.
-You can specify IP addresses as arguments or read a csv file.`,
+	Use:     appName,
+	Version: appVersion,
+	Short:   "CLI tool for logging into AWS EC2/ECS/Local docker containers",
+	Long:    `A command-line interface tool that helps you connect to AWS EC2 instances and ECS containers.`,
 }
 
 func Execute() {
@@ -22,15 +26,17 @@ func Execute() {
 }
 
 func init() {
-	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	rootCmd.Flags().BoolP("toggle", "t", false, "Toggle feature flag")
 
-	ec2Cmd.Flags().StringP("region", "r", "", "aws region name")
-	ec2Cmd.Flags().StringP("profile", "p", "", "aws profile name")
-	ec2Cmd.Flags().StringP("instance-id", "i", "", "ec2 instance id")
+	// EC2 command flags
+	ec2Cmd.Flags().StringP("region", "r", "", "AWS region name")
+	ec2Cmd.Flags().StringP("profile", "p", "", "AWS profile name")
+	ec2Cmd.Flags().StringP("instance-id", "i", "", "EC2 instance ID")
 
-	ecsCmd.Flags().StringP("region", "r", "", "aws region name")
-	ecsCmd.Flags().StringP("profile", "p", "", "aws profile name")
-	ecsCmd.Flags().StringP("cluster", "c", "", "ecs cluster name")
-	ecsCmd.Flags().StringP("service", "s", "", "ecs service name")
-	ecsCmd.Flags().StringP("task-id", "t", "", "ecs task id")
+	// ECS command flags
+	ecsCmd.Flags().StringP("region", "r", "", "AWS region name")
+	ecsCmd.Flags().StringP("profile", "p", "", "AWS profile name")
+	ecsCmd.Flags().StringP("cluster", "c", "", "ECS cluster name")
+	ecsCmd.Flags().StringP("service", "s", "", "ECS service name")
+	ecsCmd.Flags().StringP("task-id", "t", "", "ECS task ID")
 }
