@@ -7,7 +7,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/config v1.29.2
 	github.com/aws/aws-sdk-go-v2/service/ec2 v1.170.0
 	github.com/aws/aws-sdk-go-v2/service/ecs v1.53.13
-	github.com/aws/aws-sdk-go-v2/service/ssm v1.56.8
+	github.com/aws/aws-sdk-go-v2/service/ssm v1.56.12
 	github.com/docker/docker v27.5.1+incompatible
 	github.com/manifoldco/promptui v0.9.0
 	github.com/spf13/cobra v1.8.1
