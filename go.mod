@@ -5,7 +5,7 @@ go 1.22
 require (
 	github.com/aws/aws-sdk-go-v2 v1.36.1
 	github.com/aws/aws-sdk-go-v2/config v1.29.2
-	github.com/aws/aws-sdk-go-v2/service/ec2 v1.170.0
+	github.com/aws/aws-sdk-go-v2/service/ec2 v1.202.4
 	github.com/aws/aws-sdk-go-v2/service/ecs v1.53.13
 	github.com/aws/aws-sdk-go-v2/service/ssm v1.56.12
 	github.com/docker/docker v27.5.1+incompatible
@@ -23,7 +23,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.6.32 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/ini v1.8.2 // indirect
 	github.com/aws/aws-sdk-go-v2/service/internal/accept-encoding v1.12.2 // indirect
-	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.12.10 // indirect
+	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.12.13 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sso v1.24.12 // indirect
 	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.28.11 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sts v1.33.10 // indirect
@@ -39,7 +39,6 @@ require (
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
-	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/moby/docker-image-spec v1.3.1 // indirect
 	github.com/moby/term v0.5.0 // indirect
 	github.com/morikuni/aec v1.0.0 // indirect
