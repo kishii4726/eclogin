@@ -41,7 +41,8 @@ and establish a session to manage it remotely.`,
 
 		selectedInstance := prompt.GetFlagOrSelect(cmd, "instance-id", "Select EC2 Instance", displayNames, prompter)
 		instanceID := instanceNameIDMap[selectedInstance]
-		printAwsCliEc2Command(instanceID, region)
+		printEcloginEc2WithOptionCommand(instanceID, region, profile)
+		printAwsCliEc2Command(instanceID, region, profile)
 
 		sessionInput := &ssm.StartSessionInput{Target: aws.String(instanceID)}
 		ssmClient := ssm.NewFromConfig(cfg)
@@ -67,13 +68,37 @@ and establish a session to manage it remotely.`,
 	},
 }
 
-func printAwsCliEc2Command(instanceID, region string) {
-	fmt.Printf(`AWS CLI equivalent command:
+func printEcloginEc2WithOptionCommand(instanceID, region, profile string) {
+	if profile == "" {
+		fmt.Printf(`eclogin equivalent command:
+eclogin ec2 --instance-id %s --region %s
+`,
+			instanceID, region)
+	} else {
+		fmt.Printf(`eclogin equivalent command:
+eclogin ec2 --instance-id %s --region %s --profile %s
+`,
+			instanceID, region, profile)
+	}
+}
+
+func printAwsCliEc2Command(instanceID, region, profile string) {
+	if profile == "" {
+		fmt.Printf(`AWS CLI equivalent command:
 aws ssm start-session \
 	--target %s \
 	--region %s
 `,
-		instanceID, region)
+			instanceID, region)
+	} else {
+		fmt.Printf(`AWS CLI equivalent command:
+aws ssm start-session \
+	--target %s \
+	--region %s \
+	--profile %s
+`,
+			instanceID, region, profile)
+	}
 }
 
 func init() {

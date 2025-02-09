@@ -76,7 +76,8 @@ func runECSCommand(cmd *cobra.Command, _ []string) {
 	container, runtimeID := selectContainer(cmd, containerInfo)
 	shell := prompt.GetFlagOrSelect(cmd, "shell", "Select Shell", availableShells, prompter)
 
-	printAwsCliEcsCommand(cluster, taskID, container, shell, region)
+	printEcloginEcsWithOptionCommand(cluster, taskID, container, shell, region, profile)
+	printAwsCliEcsCommand(cluster, taskID, container, shell, region, profile)
 
 	if err := executeContainerSession(ecsClient, shell, taskID, cluster, container, runtimeID, region); err != nil {
 		log.Fatalf("Failed to execute container session: %v", err)
@@ -113,8 +114,23 @@ func selectContainer(cmd *cobra.Command, containerInfo map[string]string) (strin
 	return container, containerInfo[container]
 }
 
-func printAwsCliEcsCommand(cluster, taskID, container, shell, region string) {
-	fmt.Printf(`If you are using awscli, please copy the following:
+func printEcloginEcsWithOptionCommand(cluster, taskID, container, shell, region, profile string) {
+	if profile != "" {
+		fmt.Printf(`eclogin equivalent command:
+eclogin ecs --cluster %s --task-id %s --container %s --shell %s --region %s
+`,
+			cluster, taskID, container, shell, region)
+	} else {
+		fmt.Printf(`eclogin equivalent command:
+eclogin ecs --cluster %s --task-id %s --container %s --shell %s --region %s --profile %s
+`,
+			cluster, taskID, container, shell, region, profile)
+	}
+}
+
+func printAwsCliEcsCommand(cluster, taskID, container, shell, region, profile string) {
+	if profile != "" {
+		fmt.Printf(`If you are using awscli, please copy the following:
 aws ecs execute-command \
 	--cluster %s \
 	--task %s \
@@ -123,7 +139,20 @@ aws ecs execute-command \
 	--command %s \
 	--region %s
 `,
-		cluster, taskID, container, shell, region)
+			cluster, taskID, container, shell, region)
+	} else {
+		fmt.Printf(`If you are using awscli, please copy the following:
+aws ecs execute-command \
+	--cluster %s \
+	--task %s \
+	--container %s \
+	--interactive \
+	--command %s \
+	--region %s \
+	--profile %s
+`,
+			cluster, taskID, container, shell, region, profile)
+	}
 }
 
 func executeContainerSession(client *aws_ecs.Client, shell, taskID, cluster, container, runtimeID, region string) error {
