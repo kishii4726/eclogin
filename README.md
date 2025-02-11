@@ -15,7 +15,7 @@ $ sudo mv eclogin /usr/local/bin
 
 # Usage
 ## ECS
-![eclogin_v0 0 19](https://github.com/user-attachments/assets/35e3c4fa-cfb3-49db-bb2e-89e85d8d969e)
+![eclogin_v0 0 19](https://github.com/user-attachments/assets/a10ad39c-4d33-4e81-8b92-da4fe19936ee)
 
 ```
 $ eclogin ecs                                                                          
