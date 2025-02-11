@@ -29,7 +29,7 @@ const (
 )
 
 var (
-	availableShells = []string{"sh", "bash"}
+	availableShells = []string{"/bin/sh", "/bin/bash"}
 )
 
 var ecsCmd = &cobra.Command{
@@ -42,9 +42,16 @@ and establish a session to manage it remotely.`,
 }
 
 func runECSCommand(cmd *cobra.Command, _ []string) {
+	requiredFlags := []string{"cluster", "task-id", "container", "shell", "region"}
 	prompter := prompt.NewUIPrompter()
 	region := prompt.GetFlagOrInput(cmd, "region", "Please enter AWS region", defaultRegion, prompter)
-	profile := prompt.GetFlagOrInput(cmd, "profile", "Please enter AWS profile (optional)", "", prompter)
+
+	var profile string
+	if prompt.HasRequiredFlags(cmd, requiredFlags) {
+		profile = cmd.Flag("profile").Value.String()
+	} else {
+		profile = prompt.GetFlagOrInput(cmd, "profile", "Please enter AWS profile (optional)", "", prompter)
+	}
 
 	cfg, err := config.LoadConfig(region, profile)
 	if err != nil {
@@ -58,25 +65,36 @@ func runECSCommand(cmd *cobra.Command, _ []string) {
 		log.Fatalf("Failed to get ECS cluster: %v", err)
 	}
 
-	service, err := getECSService(cmd, ecsClient, cluster)
-	if err != nil {
-		log.Fatalf("Failed to get ECS service: %v", err)
-	}
+	var service string
+	var taskID string
+	var containerInfo map[string]string
+	if prompt.HasRequiredFlags(cmd, requiredFlags) {
+		taskID = cmd.Flag("task-id").Value.String()
+	} else {
+		service, err = getECSService(cmd, ecsClient, cluster)
+		if err != nil {
+			log.Fatalf("Failed to get ECS service: %v", err)
+		}
 
-	taskID, err := getECSTaskID(cmd, ecsClient, cluster, service)
-	if err != nil {
-		log.Fatalf("Failed to get ECS task ID: %v", err)
-	}
+		taskID, err = getECSTaskID(cmd, ecsClient, cluster, service)
+		if err != nil {
+			log.Fatalf("Failed to get ECS task ID: %v", err)
+		}
 
-	containerInfo, err := ecs.GetContainerInfo(ecsClient, cluster, taskID)
-	if err != nil {
-		log.Fatalf("Failed to get container information: %v", err)
+		containerInfo, err = ecs.GetContainerInfo(ecsClient, cluster, taskID)
+		if err != nil {
+			log.Fatalf("Failed to get container information: %v", err)
+		}
 	}
 
 	container, runtimeID := selectContainer(cmd, containerInfo)
-	shell := prompt.GetFlagOrSelect(cmd, "shell", "Select Shell", availableShells, prompter)
+	shell := prompt.GetFlagOrSelect(cmd, "shell", "Select Shell", availableShells, prompt.NewUIPrompter())
 
-	printEcloginEcsWithOptionCommand(cluster, taskID, container, shell, region, profile)
+	if prompt.HasRequiredFlags(cmd, requiredFlags) {
+	} else {
+		printEcloginEcsWithOptionCommand(cmd, cluster, taskID, container, shell, region, profile)
+	}
+
 	printAwsCliEcsCommand(cluster, taskID, container, shell, region, profile)
 
 	if err := executeContainerSession(ecsClient, shell, taskID, cluster, container, runtimeID, region); err != nil {
@@ -114,22 +132,24 @@ func selectContainer(cmd *cobra.Command, containerInfo map[string]string) (strin
 	return container, containerInfo[container]
 }
 
-func printEcloginEcsWithOptionCommand(cluster, taskID, container, shell, region, profile string) {
-	if profile != "" {
+func printEcloginEcsWithOptionCommand(cmd *cobra.Command, cluster string, taskID string, container string, shell string, region string, profile string) {
+	if !cmd.Flags().Changed("profile") {
 		fmt.Printf(`eclogin equivalent command:
 eclogin ecs --cluster %s --task-id %s --container %s --shell %s --region %s
+
 `,
 			cluster, taskID, container, shell, region)
 	} else {
 		fmt.Printf(`eclogin equivalent command:
 eclogin ecs --cluster %s --task-id %s --container %s --shell %s --region %s --profile %s
+
 `,
 			cluster, taskID, container, shell, region, profile)
 	}
 }
 
-func printAwsCliEcsCommand(cluster, taskID, container, shell, region, profile string) {
-	if profile != "" {
+func printAwsCliEcsCommand(cluster string, taskID string, container string, shell string, region string, profile string) {
+	if profile == "" {
 		fmt.Printf(`If you are using awscli, please copy the following:
 aws ecs execute-command \
 	--cluster %s \
@@ -138,6 +158,7 @@ aws ecs execute-command \
 	--interactive \
 	--command %s \
 	--region %s
+
 `,
 			cluster, taskID, container, shell, region)
 	} else {
@@ -150,6 +171,7 @@ aws ecs execute-command \
 	--command %s \
 	--region %s \
 	--profile %s
+
 `,
 			cluster, taskID, container, shell, region, profile)
 	}

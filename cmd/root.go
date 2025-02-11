@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	appVersion = "0.0.18"
+	appVersion = "0.0.19"
 	appName    = "eclogin"
 )
 
@@ -39,4 +39,6 @@ func init() {
 	ecsCmd.Flags().StringP("cluster", "c", "", "ECS cluster name")
 	ecsCmd.Flags().StringP("service", "s", "", "ECS service name")
 	ecsCmd.Flags().StringP("task-id", "t", "", "ECS task ID")
+	ecsCmd.Flags().StringP("container", "C", "", "ECS container name")
+	ecsCmd.Flags().StringP("shell", "S", "", "Shell to use for the session")
 }
