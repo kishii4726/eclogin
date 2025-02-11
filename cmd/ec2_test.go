@@ -6,6 +6,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -25,19 +26,24 @@ func (m *MockPrompter) Select(message string, options []string) string {
 
 func TestPrintAwsCliEc2Command(t *testing.T) {
 	tests := []struct {
+		cmd        *cobra.Command
 		name       string
 		instanceID string
 		region     string
+		profile    string
 		expected   string
 	}{
 		{
+			cmd:        &cobra.Command{},
 			name:       "prints correct AWS CLI command",
 			instanceID: "i-1234567890abcdef0",
 			region:     "ap-northeast-1",
-			expected: `AWS CLI equivalent command:
+			profile:    "",
+			expected: `If you are using awscli, please copy the following:
 aws ssm start-session \
 	--target i-1234567890abcdef0 \
 	--region ap-northeast-1
+
 `,
 		},
 	}
@@ -45,7 +51,7 @@ aws ssm start-session \
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := captureOutput(func() {
-				printAwsCliEc2Command(tt.instanceID, tt.region)
+				printAwsCliEc2Command(tt.cmd, tt.instanceID, tt.region, tt.profile)
 			})
 			if result != tt.expected {
 				t.Errorf("expected %q, got %q", tt.expected, result)
