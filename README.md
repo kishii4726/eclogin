@@ -14,8 +14,8 @@ $ sudo mv eclogin /usr/local/bin
 ```
 
 # Usage
-![Image](https://github.com/user-attachments/assets/9be3359f-ac63-4dd1-a976-9cbc2aab4aed)
 ## ECS
+![Image](https://github.com/user-attachments/assets/0c26bbce-25cc-4429-8720-62e538bee82c)
 ```
 $ eclogin ecs                                                                          
 ✔ Please enter AWS region: ap-northeast-1
