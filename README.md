@@ -14,7 +14,7 @@ $ sudo mv eclogin /usr/local/bin
 ```
 
 # Usage
-![Image](https://github.com/user-attachments/assets/a248b169-3fb2-47ff-98f1-8d318c297ded)
+![Image](https://github.com/user-attachments/assets/9be3359f-ac63-4dd1-a976-9cbc2aab4aed)
 ## ECS
 ```
 $ eclogin ecs                                                                          
