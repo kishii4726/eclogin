@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	appVersion = "0.0.19"
+	appVersion = "0.0.20"
 	appName    = "eclogin"
 )
 
