@@ -2,6 +2,7 @@ package prompt
 
 import (
 	"log"
+	"strings"
 
 	"github.com/manifoldco/promptui"
 	"github.com/spf13/cobra"
@@ -55,8 +56,14 @@ func (p *UIPrompter) Input(label string, defaultValue string) string {
 
 func (p *UIPrompter) Select(label string, options []string) string {
 	prompt := promptui.Select{
-		Label: label,
-		Items: options,
+		Label:             label,
+		Items:             options,
+		StartInSearchMode: true,
+		Searcher: func(input string, index int) bool {
+			option := options[index]
+			// Filter options by checking if the input is contained in the option (case-insensitive)
+			return strings.Contains(strings.ToLower(option), strings.ToLower(input))
+		},
 	}
 	_, result, err := prompt.Run()
 	if err != nil {
